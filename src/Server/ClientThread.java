@@ -21,12 +21,13 @@ public class ClientThread implements Runnable {
     private Server server;
     private int portNumber;
     private String input;
+    private String file;
     private String fileName;
     private String filePassword;
     private int fileID;
     private String fileEncoding = "UTF8";
-    private String filePath = "files/";
-    private String filetype = ".txt";
+    private String filePath;
+    private String filetype;
     private Desktop desktop;
     File tempfile;
     String tempFileContent;
@@ -77,7 +78,7 @@ public class ClientThread implements Runnable {
     }
     
     private static String killService = "KILL_SERVICE";
-    private static String closefile = "CLOSEFILE";
+    private static String savefile = "SAVEFILE";
     private static String exit = "EXIT";
     private static String read = "READ";
     private static String write = "WRITE";
@@ -87,7 +88,7 @@ public class ClientThread implements Runnable {
     
     public void getMessage() throws IOException {
     	while(true) {
-    		print("Enter Command (READ/WRITE/CLEAR/OVERWRITE/CLOSEFILE/EXIT/KILL_SERVICE):");
+    		print("Enter Command (READ/WRITE/CLEAR/OVERWRITE/SAVEFILE/EXIT/KILL_SERVICE):");
         	this.input = this.br.readLine();
         	this.input.trim();
         		
@@ -95,107 +96,85 @@ public class ClientThread implements Runnable {
        		if (this.input.regionMatches(0, killService, 0, 12)) {
        			System.out.println("Kill service initiated, server will close now");
        			System.exit(1);
+       			
+       		//Respond to exit	
        		}else if (this.input.regionMatches(0, exit, 0, 4)) {
        			this.socket.close();
+       		
+       		//Respond to Read
        		}else if (this.input.regionMatches(0, read, 0, 4)) {
-       			print("Enter fileName:");
-       			this.input = this.br.readLine();
-       			fileName = this.input;
-       			fileName.trim();
+       			this.file = getFileName();
+       			print(this.file);
        			
-       			print ("Enter fileID:");
-       			this.input = this.br.readLine();
-       			this.input.trim();
-       			fileID = Integer.parseInt(this.input);
-       			
-       			fileName = file(fileName, fileID, filePath, filetype);
-       			print(fileName);
-       			String cont = server.read(fileName, fileEncoding);
-       			
-       			File tempfile = File.createTempFile(fileName, ".txt");
-       			tempfile.deleteOnExit();
-       			
-       			Writer out = new OutputStreamWriter(new FileOutputStream(tempfile, true), fileEncoding);
-    			out.write(cont);
-    			out.close();
-    			
-    			System.out.println("Temp file : " + tempfile.getAbsolutePath());
-       			
-    			if(tempfile.exists()) {
-       				desktop.open(tempfile);	
+       			try {
+       				String cont = server.read(this.file, fileEncoding);
+       				tempfile = File.createTempFile(this.file, ".txt");
+       				tempfile.deleteOnExit();
+           			
+           			Writer out = new OutputStreamWriter(new FileOutputStream(tempfile, true), fileEncoding);
+        			out.write(cont);
+        			out.flush();
+        			out.close();
+        			
+        			log("Temp file : " + tempfile.getAbsolutePath());
+           			
+        			if(tempfile.exists()) {
+           				desktop.open(tempfile);	
+           			}
+       			} catch (Exception e) {
+       				print("ERROR: FILENAME INVALID");
        			}
-    			
+       			
+       			
+       		//Respond to write
        		}else if (this.input.regionMatches(0, write, 0, 5)) {
-       			print("Enter fileName:");
-       			this.input = this.br.readLine();
-       			fileName = this.input;
-       			fileName.trim();
+       			this.file = getFileName();
+       			print(this.file);
        			
-       			print ("Enter fileID:");
-       			this.input = this.br.readLine();
-       			this.input.trim();
-       			fileID = Integer.parseInt(this.input);
-       			
-       			print ("Enter file password:");
-       			this.input = this.br.readLine();
-       			this.input.trim();
-       			filePassword = this.input;
-       			
-       			fileName = file(fileName, fileID, filePath, filetype);	
-       			print(fileName);
-       			String cont = server.read(fileName, fileEncoding);
-       			
-       			tempfile = File.createTempFile(fileName, ".txt");
-       			tempfile.deleteOnExit();
-       			
-       			Writer out = new OutputStreamWriter(new FileOutputStream(tempfile, true), fileEncoding);
-    			out.write(cont);
-    			out.flush();
-    			out.close();
-       			
-                if(tempfile.exists()) {
-                	tempFileContent = null;
-                	desktop.open(tempfile);	
-                	//while (tempfile.exists()) {
-                	//	tempFileContent = readFromTempFile(tempfile);
-                	//}
-                }
-       		}else if (this.input.regionMatches(0, clear, 0, 5)) {
-       			print("Enter fileName:");
-       			this.input = this.br.readLine();
-       			fileName = this.input;
-       			fileName.trim();
-       			
-       			print ("Enter fileID:");
-       			this.input = this.br.readLine();
-       			this.input.trim();
-       			fileID = Integer.parseInt(this.input);
-       			
-       			
+       			//Get Password for Writing
        			print ("Enter file admin password:");
        			this.input = this.br.readLine();
        			this.input.trim();
        			filePassword = this.input;
        			
-       			fileName = file(fileName, fileID, filePath, filetype);
-       			clearFile(fileName);
-       		}else if (this.input.regionMatches(0, closefile, 0, 5)) {
-       			print("Enter fileName:");
-       			this.input = this.br.readLine();
-       			fileName = this.input;
-       			fileName.trim();
+       			if (filePassword == "password") {
+       				try {
+       					String cont = server.read(this.file, fileEncoding);
+       					File tempfile = File.createTempFile(this.file, ".txt");
+       					tempfile.deleteOnExit();
+           			
+           				Writer out = new OutputStreamWriter(new FileOutputStream(tempfile, true), fileEncoding);
+           				out.write(cont);
+        				out.flush();
+        				out.close();
+        			
+        				log("Temp file : " + tempfile.getAbsolutePath());
+           			
+        				if(tempfile.exists()) {
+           					desktop.open(tempfile);	
+        				}
+       				} catch (Exception e) {
+       					print("ERROR: FILENAME INVALID");
+       				}
+       			}
        			
-       			print ("Enter fileID:");
+       			
+            //Respond to clear
+       		}else if (this.input.regionMatches(0, clear, 0, 5)) {
+       			this.fileName = getFileName();
+       			
+       			print ("Enter file admin password:");
        			this.input = this.br.readLine();
        			this.input.trim();
-       			fileID = Integer.parseInt(this.input);
+       			this.filePassword = this.input;
        			
-       			fileName = file(fileName, fileID, filePath, filetype);
-       			if (tempfile.getAbsolutePath() == fileName) {
-       				tempFileContent = readFromTempFile(tempfile);
-       				tempfile.delete();
-       				writeToFile (fileName, tempFileContent);
-       			}
+       			clearFile(fileName);
+       			
+       		//Respond to Save file
+       		}else if (this.input.regionMatches(0, savefile, 0, 8)) {
+       			tempFileContent = readFromTempFile(tempfile);
+       			writeToFile(this.file, tempFileContent);
+       			tempfile.delete();
        		}
        	}
     }
@@ -351,12 +330,48 @@ public class ClientThread implements Runnable {
     		fileBuilder.append(fileIDstring);
     	}
     	fileBuilder.append(filetype);
-    	String file = fileBuilder.toString();
-    	log(file);
-    	return file;
+    	String filetitle = fileBuilder.toString();
+    	filetitle.trim();
+    	log(filetitle);
+    	return filetitle;
     }
     
     private void log(String aMessage){
         System.out.println(aMessage);
       }
+    
+    public String getFileName() throws IOException{
+    	print("Enter fileName:");
+		this.input = this.br.readLine();
+		this.fileName = this.input;
+		this.fileName.trim();
+			
+		print ("Enter fileID:");
+		this.input = this.br.readLine();
+		this.input.trim();
+		this.fileID = Integer.parseInt(this.input);
+
+		print ("Enter file path (HIT RETURN FOR DEFAULT):");
+		this.input = this.br.readLine();
+		if(this.input == null) {
+			this.filePath = "files/";
+			this.filePath.trim();
+		} else {
+			this.filePath = "files/";
+			this.filePath.trim();
+		}
+			
+		print ("Enter file type (HIT RETURN FOR DEFAULT):");
+		this.input = this.br.readLine();
+		if(this.input.regionMatches(0, ".", 0, 1)) {
+			this.filetype = this.input;
+			this.filetype.trim();
+		} else {
+			this.filetype = ".txt";
+			this.filetype.trim();
+		}
+		file = file(this.fileName, this.fileID, this.filePath, this.filetype);
+		print(file);
+		return file;
+    }
 }
