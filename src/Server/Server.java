@@ -94,6 +94,7 @@ public class Server {
 		try {
 			Writer out = new OutputStreamWriter(new FileOutputStream(file, true), fileEncoding);
 			out.write(msg + newLine);
+			out.flush();
 			out.close();
 	    }catch (Exception e) {
 	    	e.printStackTrace();
@@ -104,6 +105,7 @@ public class Server {
 		try {
 			Writer out = new OutputStreamWriter(new FileOutputStream(file, false), fileEncoding);
 			out.write("");
+			out.flush();
 			out.close();
 	    }catch (Exception e) {
 	    	e.printStackTrace();
