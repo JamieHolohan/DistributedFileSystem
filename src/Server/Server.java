@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
@@ -22,6 +23,7 @@ public class Server {
     private int serverPort;
     private static InetAddress serverIP;
     static Server server;
+    private List<ClientThread> clients; // or "protected static List<ClientThread> clients;"
     
     String filename = "file";
     String filepath = "files/";
@@ -51,71 +53,76 @@ public class Server {
       server.runServer();
     }
     
+    public List<ClientThread> getClients(){
+        return clients;
+    }
+    
     private void runServer(){
-    	String file = file(filename, fileID, filepath, filetype);
-    	server.read(file, fileEncoding);
-    	server.write(file, fileEncoding);
-    	server.read(file, fileEncoding);
+    	 clients = new ArrayList<ClientThread>();
+         ServerSocket serverSocket = null;
+         try{
+             serverSocket = new ServerSocket(serverPort);
+             acceptClients(serverSocket);
+         }catch (IOException e){
+             System.err.println("Could not listen on port: "+serverPort);
+             System.exit(1);
+         }
      }
     
    // @SuppressWarnings("resource")
-	private void read(String file, String fileEncoding){
+	String read(String file, String fileEncoding){
+		String fileCont = null;
+		StringBuilder fileContents = new StringBuilder();
+		String newLine = System.getProperty("line.separator");
     	try {
 			Scanner scanner = new Scanner(new FileInputStream(file), fileEncoding);
-			StringBuilder fileContents = new StringBuilder();
-			String newLine = System.getProperty("line.separator");
 			while (scanner.hasNextLine()){
 				fileContents.append(scanner.nextLine() + newLine);
 			}
-	    	String fileCont = fileContents.toString();
-	    	log(fileCont);
+	    	fileCont = fileContents.toString();
 	    	scanner.close();
 		}catch (FileNotFoundException e){
 			e.printStackTrace();
+			fileContents.append("The file " + file + " does not exist!");
+			fileCont = fileContents.toString();
 		}
+		return fileCont;
     }
     
-    private void write(String file, String fileEncoding){
+    void write(String file, String fileEncoding, String msg){
     	String newLine = System.getProperty("line.separator");
-	    int counter = 0;
-    	
 		try {
 			Writer out = new OutputStreamWriter(new FileOutputStream(file, true), fileEncoding);
-			//Writer out = new FileWriter(file, true);
-			out.write("Line " + counter + newLine);
+			out.write(msg + newLine);
 			out.close();
 	    }catch (Exception e) {
 	    	e.printStackTrace();
 	    }
 	 }
-
-
-    private void log(String aMessage){
-        System.out.println(aMessage);
-      }
     
-    private String file(String filename, int fileID, String filepath, String filetype) {
-    	String fileIDstring = Integer.toString(fileID);
-    	StringBuilder fileBuilder = new StringBuilder();
-    	
-    	//fileBuilder.append(System.getProperty("user.dir"));
-    	fileBuilder.append(filepath);
-    	fileBuilder.append(filename);
-    	if (fileID < 10) {
-    		fileBuilder.append("000");
-    		fileBuilder.append(fileIDstring);
-    	}else if (fileID < 100){
-    		fileBuilder.append("00");
-    		fileBuilder.append(fileIDstring);
-    	}else if (fileID < 1000){
-    		fileBuilder.append("0");
-    		fileBuilder.append(fileIDstring);
-    	}else if (fileID < 10000){
-    		fileBuilder.append(fileIDstring);
-    	}
-    	fileBuilder.append(filetype);
-    	String file = fileBuilder.toString();
-    	log(file);
-    	return file;
-    }
+    void clear(String file, String fileEncoding){
+		try {
+			Writer out = new OutputStreamWriter(new FileOutputStream(file, false), fileEncoding);
+			out.write("");
+			out.close();
+	    }catch (Exception e) {
+	    	e.printStackTrace();
+	    }
+	 }
+    
+    private void acceptClients(ServerSocket serverSocket){
+        System.out.println("server starts port = " + serverSocket.getLocalSocketAddress());
+        while(true){
+            try{
+                Socket socket = serverSocket.accept();
+                System.out.println("accepts : " + socket.getRemoteSocketAddress());
+                ClientThread client = new ClientThread(this, socket);
+                Thread thread = new Thread(client);
+                thread.start();
+                clients.add(client);
+            }catch (IOException ex){
+                System.out.println("Accept failed on : "+serverPort);
+            }
+        }
+    }  
 }
