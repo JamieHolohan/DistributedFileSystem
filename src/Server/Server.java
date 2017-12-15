@@ -92,7 +92,7 @@ public class Server {
     void write(String file, String fileEncoding, String msg){
     	String newLine = System.getProperty("line.separator");
 		try {
-			Writer out = new OutputStreamWriter(new FileOutputStream(file, true), fileEncoding);
+			Writer out = new OutputStreamWriter(new FileOutputStream(file, false), fileEncoding);
 			out.write(msg + newLine);
 			out.flush();
 			out.close();

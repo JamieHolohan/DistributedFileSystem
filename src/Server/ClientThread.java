@@ -22,6 +22,7 @@ public class ClientThread implements Runnable {
     private int portNumber;
     private String input;
     private String file;
+    private File writeFile;
     private String fileName;
     private String filePassword;
     private int fileID;
@@ -30,7 +31,8 @@ public class ClientThread implements Runnable {
     private String filetype;
     private Desktop desktop;
     File tempfile;
-    String tempFileContent;
+    private String fileContent;
+    private boolean writingToFile = false;
 
     public ClientThread(Server server, Socket socket) throws IOException{
         this.server = server;
@@ -91,6 +93,7 @@ public class ClientThread implements Runnable {
     		print("Enter Command (READ/WRITE/CLEAR/OVERWRITE/SAVEFILE/EXIT/KILL_SERVICE):");
         	this.input = this.br.readLine();
         	this.input.trim();
+        	this.input.toUpperCase();
         		
        		//Respond to kill_service
        		if (this.input.regionMatches(0, killService, 0, 12)) {
@@ -134,28 +137,34 @@ public class ClientThread implements Runnable {
        			//Get Password for Writing
        			print ("Enter file admin password:");
        			this.input = this.br.readLine();
+       			this.input.toString();
        			this.input.trim();
-       			filePassword = this.input;
+       			this.filePassword = this.input;
+       			print(this.filePassword);
        			
-       			if (filePassword == "password") {
+       			if (true) {
        				try {
        					String cont = server.read(this.file, fileEncoding);
-       					File tempfile = File.createTempFile(this.file, ".txt");
-       					tempfile.deleteOnExit();
+       					writeFile = new File("C:/temp/" + this.file);
+       					writeFile.getParentFile().mkdir();
+       					writeFile.createNewFile();
            			
-           				Writer out = new OutputStreamWriter(new FileOutputStream(tempfile, true), fileEncoding);
+           				Writer out = new OutputStreamWriter(new FileOutputStream(writeFile, false), fileEncoding);
            				out.write(cont);
         				out.flush();
         				out.close();
         			
-        				log("Temp file : " + tempfile.getAbsolutePath());
+        				log("Temp file : " + writeFile.getAbsolutePath());
            			
-        				if(tempfile.exists()) {
-           					desktop.open(tempfile);	
+        				if(writeFile.exists()) {
+           					desktop.open(writeFile);	
         				}
        				} catch (Exception e) {
        					print("ERROR: FILENAME INVALID");
        				}
+       			} else {
+       				print("ERROR: INVALID PASSWORD");
+       				log ("Invalid Password Entered from:");
        			}
        			
        			
@@ -172,9 +181,9 @@ public class ClientThread implements Runnable {
        			
        		//Respond to Save file
        		}else if (this.input.regionMatches(0, savefile, 0, 8)) {
-       			tempFileContent = readFromTempFile(tempfile);
-       			writeToFile(this.file, tempFileContent);
-       			tempfile.delete();
+       			fileContent = readFromFile(writeFile);
+       			writeToFile(file, fileContent);
+       			writeFile.delete();
        		}
        	}
     }
@@ -270,8 +279,8 @@ public class ClientThread implements Runnable {
     	}
     }
     
-    public String readFromTempFile(File tempfile) throws IOException {
-    	FileReader f = new FileReader(tempfile);
+    public String readFromFile(File file) throws IOException {
+    	FileReader f = new FileReader(file);
 		BufferedReader b = new BufferedReader(f);
 		String fileCont = null;
 		StringBuilder fileContents = new StringBuilder();
