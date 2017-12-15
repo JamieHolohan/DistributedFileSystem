@@ -111,6 +111,7 @@ public class ClientThread implements Runnable {
        			
        			try {
        				String cont = server.read(this.file, fileEncoding);
+       				//decrypt(cont);
        				tempfile = File.createTempFile(this.file, ".txt");
        				tempfile.deleteOnExit();
            			
@@ -145,6 +146,7 @@ public class ClientThread implements Runnable {
        			if (true) {
        				try {
        					String cont = server.read(this.file, fileEncoding);
+       					//decrypt(cont);
        					writeFile = new File("C:/temp/" + this.file);
        					writeFile.getParentFile().mkdir();
        					writeFile.createNewFile();
@@ -182,6 +184,7 @@ public class ClientThread implements Runnable {
        		//Respond to Save file
        		}else if (this.input.regionMatches(0, savefile, 0, 8)) {
        			fileContent = readFromFile(writeFile);
+       			//encrypt(fileContent);
        			writeToFile(file, fileContent);
        			writeFile.delete();
        		}
@@ -350,16 +353,24 @@ public class ClientThread implements Runnable {
       }
     
     public String getFileName() throws IOException{
+
     	print("Enter fileName:");
 		this.input = this.br.readLine();
 		this.fileName = this.input;
 		this.fileName.trim();
-			
-		print ("Enter fileID:");
-		this.input = this.br.readLine();
-		this.input.trim();
-		this.fileID = Integer.parseInt(this.input);
-
+		
+		boolean isInt = false;
+		while(!isInt) {	
+			print ("Enter fileID:");
+			this.input = this.br.readLine();
+			this.input.trim();
+			try{
+				this.fileID = Integer.parseInt(this.input);
+				isInt = true;
+			} catch (Exception e) {
+				print("ERROR: File ID must be an integer");
+			}
+		}
 		print ("Enter file path (HIT RETURN FOR DEFAULT):");
 		this.input = this.br.readLine();
 		if(this.input == null) {
@@ -382,5 +393,37 @@ public class ClientThread implements Runnable {
 		file = file(this.fileName, this.fileID, this.filePath, this.filetype);
 		print(file);
 		return file;
+    }
+    
+    private String encrypt(String msg) {
+		String encryptedMSG;
+		char letter;
+		StringBuilder fileBuilder = new StringBuilder();
+		
+		while(msg != null) {
+			letter = msg.charAt(0);
+			msg = msg.substring(1);
+			letter = (char)(letter + 5) ;
+			
+			fileBuilder.append(letter);
+		}
+		encryptedMSG = fileBuilder.toString();
+		return encryptedMSG;	
+    }
+    
+    private String decrypt(String msg) {
+    	String decryptedMSG;
+		char letter;
+		StringBuilder fileBuilder = new StringBuilder();
+		
+		while(msg != null) {
+			letter = msg.charAt(0);
+			msg = msg.substring(1);
+			letter = (char)(letter - 5) ;
+			
+			fileBuilder.append(letter);
+		}
+		decryptedMSG = fileBuilder.toString();
+    	return decryptedMSG;	
     }
 }

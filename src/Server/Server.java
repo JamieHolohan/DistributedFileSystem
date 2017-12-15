@@ -3,10 +3,8 @@ package Server;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -24,10 +22,8 @@ public class Server {
     private static InetAddress serverIP;
     static Server server;
     private List<ClientThread> clients; // or "protected static List<ClientThread> clients;"
+    private List<ProjectFile> files; // or "protected static List<ClientThread> clients;"
     
-    String filename = "file";
-    String filepath = "files/";
-    String filetype = ".txt";
     String fileEncoding = "UTF8";
     int fileID = 0001;
 
@@ -50,7 +46,7 @@ public class Server {
     }
 
     private void startServer(){
-      server.runServer();
+    	server.runServer();
     }
     
     public List<ClientThread> getClients(){
@@ -86,11 +82,13 @@ public class Server {
 			fileContents.append("The file " + file + " does not exist!");
 			fileCont = fileContents.toString();
 		}
+    	//encrypt(fileCont);
 		return fileCont;
     }
     
     void write(String file, String fileEncoding, String msg){
     	String newLine = System.getProperty("line.separator");
+    	//msg = decrypt(msg);
 		try {
 			Writer out = new OutputStreamWriter(new FileOutputStream(file, false), fileEncoding);
 			out.write(msg + newLine);
@@ -126,5 +124,42 @@ public class Server {
                 System.out.println("Accept failed on : "+serverPort);
             }
         }
-    }  
+    } 
+    
+    private String encrypt(String msg) {
+		String encryptedMSG;
+		char letter;
+		StringBuilder fileBuilder = new StringBuilder();
+		
+		while(msg != null) {
+			letter = msg.charAt(0);
+			//System.out.println(letter);
+			msg = msg.substring(1);
+			//System.out.println(msg);
+			letter = (char)(letter + 5) ;
+			//letter.toString();
+			//System.out.println(letter);
+			
+			fileBuilder.append(letter);
+		}
+		System.out.println("Yes");
+		encryptedMSG = fileBuilder.toString();
+		return encryptedMSG;	
+    }
+    
+    private String decrypt(String msg) {
+    	String decryptedMSG;
+		char letter;
+		StringBuilder fileBuilder = new StringBuilder();
+		
+		while(msg != null) {
+			letter = msg.charAt(0);
+			msg = msg.substring(1);
+			letter = (char)(letter - 5) ;
+			
+			fileBuilder.append(letter);
+		}
+		decryptedMSG = fileBuilder.toString();
+    	return decryptedMSG;	
+    }
 }
